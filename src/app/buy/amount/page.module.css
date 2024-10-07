@@ -1,0 +1,174 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f0f0;
+  padding: 20px;
+}
+
+.widget {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.logo {
+  font-size: 24px;
+  color: #4caf50;
+}
+
+.tabs {
+  display: flex;
+  background-color: #e5e7eb;
+  border-radius: 8px;
+}
+
+.tabs button {
+  background: none;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.activeTab {
+  color: #fff;
+  font-weight: bold;
+  background-color: #4caf50 !important;
+  border-radius: 8px;
+}
+
+.menuButton {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.progress {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.step {
+  font-size: 14px;
+  color: #888;
+}
+
+.active {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.content {
+  padding: 15px;
+}
+
+.paymentMethod,
+.mobileCarrier {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.methodButton,
+.carrierButton {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 15px;
+  padding: 5px 10px;
+  font-size: 14px;
+}
+
+.exchange {
+  margin-bottom: 15px;
+}
+
+.inputGroup {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.inputGroup input {
+  width: 60%;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.currency {
+  font-weight: bold;
+}
+
+.rate,
+.fee,
+.reward {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.updateTime {
+  color: #888;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.feeAmount {
+  float: right;
+}
+
+.reward {
+  background-color: #e8f5e9;
+  color: #4caf50;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.nextButton {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  text-align: center;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 15px;
+}
+
+@media (max-width: 600px) {
+  .widget {
+    max-width: 100%;
+  }
+
+  .progress {
+    font-size: 12px;
+  }
+
+  .inputGroup {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .inputGroup input {
+    width: 100%;
+    margin-top: 5px;
+  }
+}
