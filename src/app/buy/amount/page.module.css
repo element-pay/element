@@ -25,7 +25,13 @@
 
 .logo {
   font-size: 24px;
-  color: #4caf50;
+  color: var(--primary-color);
+  font-weight: 900;
+  font-family: "Orbitron", sans-serif;
+}
+
+.logo span {
+  color: #2e2e2e;
 }
 
 .tabs {
@@ -44,7 +50,7 @@
 .activeTab {
   color: #fff;
   font-weight: bold;
-  background-color: #4caf50 !important;
+  background-color: var(--primary-color) !important;
   border-radius: 8px;
 }
 
@@ -53,23 +59,6 @@
   border: none;
   font-size: 20px;
   cursor: pointer;
-}
-
-.progress {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.step {
-  font-size: 14px;
-  color: #888;
-}
-
-.active {
-  color: #4caf50;
-  font-weight: bold;
 }
 
 .content {
@@ -133,8 +122,8 @@
 }
 
 .reward {
-  background-color: #e8f5e9;
-  color: #4caf50;
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
   padding: 10px;
   border-radius: 5px;
 }
@@ -143,7 +132,7 @@
   display: block;
   width: 100%;
   padding: 10px;
-  background-color: #4caf50;
+  background-color: var(--primary-color);
   color: white;
   text-align: center;
   border: none;
@@ -156,10 +145,6 @@
 @media (max-width: 600px) {
   .widget {
     max-width: 100%;
-  }
-
-  .progress {
-    font-size: 12px;
   }
 
   .inputGroup {

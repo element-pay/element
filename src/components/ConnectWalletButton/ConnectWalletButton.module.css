@@ -1,0 +1,57 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.connectWalletButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+  text-align: center;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 15px;
+  transition: all 0.3s ease;
+}
+
+.connectWalletButton:hover {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+.connected {
+  background-color: var(--secondary-color);
+}
+
+.connected:hover {
+  background-color: var(--secondary-color);
+}
+
+.icon {
+  margin-right: 10px;
+  transition: transform 0.3s ease;
+}
+
+.connected .icon {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

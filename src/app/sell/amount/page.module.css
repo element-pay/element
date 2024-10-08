@@ -25,7 +25,13 @@
 
 .logo {
   font-size: 24px;
-  color: #4caf50;
+  color: var(--primary-color);
+  font-weight: 900;
+  font-family: "Orbitron", sans-serif;
+}
+
+.logo span {
+  color: #2e2e2e;
 }
 
 .tabs {
@@ -44,7 +50,7 @@
 .activeTab {
   color: #fff;
   font-weight: bold;
-  background-color: #4caf50 !important;
+  background-color: var(--primary-color) !important;
   border-radius: 8px;
 }
 
@@ -55,25 +61,12 @@
   cursor: pointer;
 }
 
-.progress {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.step {
-  font-size: 14px;
-  color: #888;
-}
-
-.active {
-  color: #4caf50;
-  font-weight: bold;
-}
-
 .content {
   padding: 15px;
+}
+
+.offrampType span {
+  font-weight: bold;
 }
 
 .offrampType {
@@ -85,25 +78,65 @@
 
 .typeButtons {
   display: flex;
-  gap: 10px;
+  background-color: #f0f0f0;
+  border-radius: 15px;
+  padding: 3px;
+  position: relative;
+  gap: 3px;
 }
 
 .typeButtons button {
-  background-color: #f0f0f0;
-  border: 1px solid #ddd;
-  border-radius: 15px;
-  padding: 5px 10px;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 16px;
   font-size: 14px;
   cursor: pointer;
+  position: relative;
+  z-index: 1;
+  transition: color 0.3s ease;
 }
 
-.activeType {
-  background-color: #4caf50 !important;
-  color: white;
+.typeButtons button.active {
+  color: var(--primary-color);
+}
+
+.slider {
+  position: absolute;
+  height: calc(100% - 6px);
+  top: 3px;
+  width: calc(50% - 3px);
+  background-color: var(--secondary-color);
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.slider.mobileActive {
+  transform: translateX(calc(100% + 3px));
 }
 
 .exchange {
   margin-bottom: 15px;
+}
+
+.phoneInput {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.mobileMoneyDetails {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+}
+
+.inputGroup label {
+  font-weight: bold;
+  margin: 5px;
 }
 
 .inputGroup {
@@ -120,8 +153,58 @@
   border-radius: 5px;
 }
 
+.currencySelect {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f8f8f8;
+  margin: 5px;
+}
+
+.currencySelect svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s;
+}
+
+.currencySelect.open svg {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  min-width: 150px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdownItem:hover {
+  background-color: #f0f0f0;
+}
+
 .currency {
   font-weight: bold;
+  margin-right: 5px;
 }
 
 .networkBadge,
@@ -148,11 +231,43 @@
   float: right;
 }
 
+.bankDetails {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #f8f8f8;
+  border-radius: 8px;
+}
+
+.bankSelect {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  background-color: white;
+}
+
+.accountInput {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.memoInput {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
 .nextButton {
   display: block;
   width: 100%;
   padding: 10px;
-  background-color: #4caf50;
+  background-color: var(--primary-color);
   color: white;
   text-align: center;
   border: none;
@@ -167,10 +282,6 @@
     max-width: 100%;
   }
 
-  .progress {
-    font-size: 12px;
-  }
-
   .inputGroup {
     flex-direction: column;
     align-items: flex-start;
@@ -179,5 +290,9 @@
   .inputGroup input {
     width: 100%;
     margin-top: 5px;
+  }
+
+  .bankDetails {
+    padding: 10px;
   }
 }

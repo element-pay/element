@@ -1,27 +1,31 @@
 import React from 'react';
 import Link from 'next/link';
 import styles from './page.module.css';
+import ProgressBar from '../../../components/ProgressBar/ProgressBar';
+import MenuButton from '../../../components/MenuButton/MenuButton';
 
 export default function BuyAmount() {
+  const steps = [
+    { label: 'Amount', status: 'active' as 'completed', number: 1 },
+    { label: 'Wallet', status: 'upcoming' as 'active', number: 2 },
+    { label: 'Verify', status: 'upcoming' as 'upcoming', number: 3 },
+    { label: 'Order', status: 'upcoming' as 'upcoming', number: 4 }
+  ];
+
   return (
     <div className={styles.container}>
       <div className={styles.widget}>
         <div className={styles.header}>
-          <div className={styles.logo}>ElementPay</div>
+          <div className={styles.logo}>Element<span>Pay</span></div>
           <div className={styles.tabs}>
             <button className={styles.activeTab}>Buy USDC</button>
             <button>
               <Link href="/sell/amount">Sell USDC</Link>
             </button>
           </div>
-          <button className={styles.menuButton}>⋮</button>
+          <MenuButton />
         </div>
-        <div className={styles.progress}>
-          <div className={styles.step + ' ' + styles.active}>Amount</div>
-          <div className={styles.step}>Wallet</div>
-          <div className={styles.step}>Verify</div>
-          <div className={styles.step}>Order</div>
-        </div>
+        <ProgressBar steps={steps} currentStep={2} />
         <div className={styles.content}>
           <div className={styles.paymentMethod}>
             <span>Payment method:</span>
