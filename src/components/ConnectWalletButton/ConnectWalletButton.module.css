@@ -1,8 +1,5 @@
 .container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
+  padding: 10px 0;
 }
 
 .connectWalletButton {
@@ -11,8 +8,8 @@
   align-items: center;
   width: 100%;
   padding: 10px;
-  background-color: var(--secondary-color);
-  color: var(--primary-color);
+  background-color: #1a1b1f;
+  color: #fff;
   text-align: center;
   border: none;
   border-radius: 5px;
@@ -23,8 +20,8 @@
 }
 
 .connectWalletButton:hover {
-  background-color: var(--primary-color);
-  color: var(--white);
+  background-color: #1a1b1f;
+  color: #fff;
 }
 
 .connected {
@@ -38,6 +35,10 @@
 .icon {
   margin-right: 10px;
   transition: transform 0.3s ease;
+}
+
+.connectWalletButton:hover .icon {
+  transform: scale(1.2) rotate(-23deg);
 }
 
 .connected .icon {
