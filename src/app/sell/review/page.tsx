@@ -18,12 +18,20 @@ export default function SellReview() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Get all possible parameters
   const amount = searchParams.get('amount');
   const token = searchParams.get('token');
   const network = searchParams.get('network');
   const receiveCurrency = searchParams.get('receiveCurrency');
   const receiveAmount = searchParams.get('receiveAmount');
   const offrampType = searchParams.get('offrampType');
+  
+  // Bank transfer specific parameters
+  const bank = searchParams.get('bank');
+  const account = searchParams.get('account');
+  const memo = searchParams.get('memo');
+  
+  // Mobile money specific parameter
   const phone = searchParams.get('phone');
 
   const [gatewayStatus, setGatewayStatus] = useState('inactive');
@@ -52,7 +60,7 @@ export default function SellReview() {
         </div>
         <ProgressBar steps={steps} currentStep={2} />
 
-        <h2>Review</h2>
+        <h2>Review Transaction Details</h2>
         <div className={styles.reviewContent}>
           <div className={styles.reviewItem}>
             <span className={styles.reviewLabel}>You are selling:</span>
@@ -63,33 +71,64 @@ export default function SellReview() {
             <span>{receiveAmount} {receiveCurrency}</span>
           </div>
           <div className={styles.reviewItem}>
-            <span className={styles.reviewLabel}>Off-ramp type:</span>
+            <span className={styles.reviewLabel}>Payment Method:</span>
             <span>{offrampType === 'mobile' ? 'Mobile Money' : 'Bank Transfer'}</span>
           </div>
-          {offrampType === 'mobile' && (
-            <div className={styles.reviewItem}>
-              <span className={styles.reviewLabel}>Mobile Money Number:</span>
-              <span>{phone}</span>
+
+          {offrampType === 'mobile' ? (
+            // Mobile Money Details
+            <div className={styles.paymentDetails}>
+              <div className={styles.reviewItem}>
+                <span className={styles.reviewLabel}>Mobile Money Number:</span>
+                <span>{phone}</span>
+              </div>
+              <div className={styles.reviewItem}>
+                <span className={styles.reviewLabel}>Network Provider:</span>
+                <span>{receiveCurrency === 'UGX' ? 'MTN/Airtel Uganda' : 
+                       receiveCurrency === 'KES' ? 'M-PESA Kenya' : 
+                       'Mobile Money Ghana'}</span>
+              </div>
+            </div>
+          ) : (
+            // Bank Transfer Details
+            <div className={styles.paymentDetails}>
+              <div className={styles.reviewItem}>
+                <span className={styles.reviewLabel}>Bank Name:</span>
+                <span>{decodeURIComponent(bank || '')}</span>
+              </div>
+              <div className={styles.reviewItem}>
+                <span className={styles.reviewLabel}>Account Number:</span>
+                <span>{account}</span>
+              </div>
+              {memo && (
+                <div className={styles.reviewItem}>
+                  <span className={styles.reviewLabel}>Transfer Memo:</span>
+                  <span>{memo}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <div className={styles.warning}>
-          Ensure the details above are correct. Failed transaction due to wrong details may attract a refund fee.
+          <p>Please verify all details carefully. Transactions cannot be reversed once confirmed.</p>
+          <p>Failed transactions due to incorrect details may incur a refund fee.</p>
         </div>
 
         <div className={styles.confirmationSteps}>
-          <p>To confirm order, you'll be required to approve these two permissions from your wallet</p>
+          <h3>Confirmation Steps</h3>
+          <p>Your wallet will request two permissions to complete this transaction:</p>
+          
           <div className={styles.step}>
             <div className={`${styles.stepLoader} ${styles[gatewayStatus]}`}></div>
             <span className={`${styles.stepText} ${gatewayStatus === 'inactive' ? styles.inactive : ''}`}>
-              Approve Gateway
+              1. Approve Gateway Permission
             </span>
           </div>
           <div className={styles.step}>
             <div className={`${styles.stepLoader} ${styles[orderStatus]}`}></div>
             <span className={`${styles.stepText} ${orderStatus === 'inactive' ? styles.inactive : ''}`}>
-              Create Order
+              2. Create Order Transaction
             </span>
           </div>
         </div>
@@ -99,7 +138,7 @@ export default function SellReview() {
           className={`${styles.nextButton} ${isProcessing ? styles.processing : ''}`}
           disabled={isProcessing}
         >
-          {isProcessing ? 'Processing...' : 'Confirm'}
+          {isProcessing ? 'Processing...' : 'Confirm Transaction'}
         </button>
       </div>
     </div>
