@@ -95,6 +95,7 @@
   position: relative;
   z-index: 1;
   transition: color 0.3s ease;
+  color: #2e2e2e;
 }
 
 .typeButtons button.active {
@@ -134,6 +135,11 @@
   border-radius: 8px;
 }
 
+.mobileMoneyDetails input {
+  background-color: white;
+  color: #2e2e2e;
+}
+
 .inputGroup label {
   font-weight: bold;
   margin: 5px;
@@ -151,6 +157,8 @@
   padding: 5px;
   border: 1px solid #ddd;
   border-radius: 5px;
+  background-color: white;
+  color: #2e2e2e;
 }
 
 .currencySelect {
@@ -245,6 +253,7 @@
   border-radius: 5px;
   margin-bottom: 10px;
   background-color: white;
+  color: #2e2e2e;
 }
 
 .accountInput {
@@ -253,6 +262,8 @@
   border: 1px solid #ddd;
   border-radius: 5px;
   margin-bottom: 10px;
+  background-color: white;
+  color: #2e2e2e;
 }
 
 .memoInput {
@@ -261,6 +272,8 @@
   border: 1px solid #ddd;
   border-radius: 5px;
   margin-bottom: 10px;
+  background-color: white;
+  color: #2e2e2e;
 }
 
 .nextButton {
