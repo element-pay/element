@@ -1,4 +1,5 @@
 import React from 'react';
+import Providers from './Providers';
 import '../styles/globals.css';
 
 export const metadata = {
@@ -14,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <main>{children}</main>
+        <Providers>
+          <main>{children}</main>
+        </Providers>
       </body>
     </html>
   );
