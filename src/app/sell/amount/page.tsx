@@ -121,8 +121,8 @@ export default function SellAmount() {
           <MenuButton />
         </div>
         <ProgressBar steps={steps} currentStep={1} />
-        <ConnectWalletButton />
         <div className={styles.content}>
+        <ConnectWalletButton />
           <div className={styles.offrampType}>
             <span>Off-ramp type:</span>
             <div className={styles.typeButtons}>

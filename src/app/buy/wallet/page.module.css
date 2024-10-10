@@ -53,6 +53,8 @@
   margin-bottom: 20px;
   border: 1px solid #ddd;
   border-radius: 5px;
+  background-color: white;
+  color: #2e2e2e;
 }
 
 .nextButton {

@@ -6,6 +6,7 @@ import BackButton from '../../../components/BackButton/BackButton';
 import MenuButton from '../../../components/MenuButton/MenuButton';
 import styles from './page.module.css';
 import ProgressBar from '../../../components/ProgressBar/ProgressBar';
+import ConnectWalletButton from '../../../components/ConnectWalletButton/ConnectWalletButton';
 
 export default function BuyWallet() {
   const steps = [
@@ -26,6 +27,7 @@ export default function BuyWallet() {
         <div className={styles.content}>
           <h2 className={styles.title}>Specify Your Wallet</h2>
           <input type="text" placeholder="Enter wallet address" className={styles.input} />
+          < ConnectWalletButton />
           <Link href="/buy/verify" className={styles.nextButton}>
             Next: Verify
           </Link>
