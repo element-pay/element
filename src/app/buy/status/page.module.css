@@ -1,0 +1,109 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f0f0;
+  padding: 20px;
+}
+
+.widget {
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.statusContent {
+  text-align: center;
+}
+
+.successStatus,
+.failureStatus {
+  margin-bottom: 24px;
+}
+
+.successStatus h2,
+.failureStatus h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+
+.successStatus p,
+.failureStatus p {
+  font-size: 16px;
+  color: #6c757d;
+}
+
+.transactionDetails {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.transactionDetails h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #2a2a2a;
+  margin: 0 0 16px;
+}
+
+.detailItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.detailItem:last-child {
+  border-bottom: none;
+}
+
+.detailLabel {
+  font-weight: 500;
+  color: #6c757d;
+}
+
+.nextButton {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background-color: #007bff;
+  color: white;
+  text-align: center;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.nextButton:hover {
+  background-color: #0056b3;
+}
+
+@media (max-width: 600px) {
+  .widget {
+    max-width: 100%;
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .transactionDetails {
+    padding: 16px;
+  }
+}
