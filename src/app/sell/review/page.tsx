@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
 import BackButton from '../../../components/BackButton/BackButton';
@@ -10,7 +10,7 @@ import { erc20Abi, gatewayAbi } from "../../api/abi";
 import { useAccount, useWriteContract, useReadContract, usePublicClient } from "wagmi";
 import { fetchRate, fetchAccountName, fetchSupportedInstitutions, fetchAggregatorPublicKey } from "../../api/aggregator";
 import { getGatewayContractAddress, fetchSupportedTokens, publicKeyEncrypt } from "../../utils";
-import { type BaseError, formatUnits, parseUnits, encodeFunctionData, getAddress } from "viem";
+import { type BaseError, formatUnits, parseUnits, encodeFunctionData, getAddress, decodeEventLog, concatBytes } from "viem";
 import { useSendSponsoredTransaction, useUserOpWait } from "@biconomy/use-aa";
 
 
@@ -32,6 +32,13 @@ export default function SellReview() {
   const [paymasterAllowance, setPaymasterAllowance] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
+
+  const [isApprovalLogsFetched, setIsApprovalLogsFetched] = useState<boolean>(false);
+  const [isOrderCreatedLogsFetched, setIsOrderCreatedLogsFetched] = useState<boolean>(false);
+  const [orderId, setOrderId] = useState<string | null>(null);  // This will store the order ID
+  const [createdAt, setCreatedAt] = useState<string | null>(null);  // This will store the order creation timestamp
+  const [transactionStatus, setTransactionStatus] = useState<string>('inactive');  // Manage transaction status
+
 
 
   // Get all possible parameters
@@ -59,6 +66,8 @@ export default function SellReview() {
   const [gatewayAllowance, setGatewayAllowance] = useState<number>(0);
   const [isGatewayApproved, setIsGatewayApproved] = useState<boolean>(false);
   const [isOrderCreated, setIsOrderCreated] = useState<boolean>(false);
+
+  
 
   const account = useAccount();
   const client = usePublicClient();
@@ -104,49 +113,131 @@ export default function SellReview() {
   }
   }, [gatewayAllowanceInWei, tokenAddress, amount]);
 
-  
 
-  
-  // const handleGatewayApproval = async () => {
-  //   console.log("Starting gateway approval...");
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
 
-  //   const tokenDecimals = fetchSupportedTokens("Base")?.find(t => t.symbol.toUpperCase() === token)?.decimals;
+    if (!client || isApprovalLogsFetched || !isConfirming) {
+      console.log("Client is:", client);
+      console.log("Conneced account is:", account);
+      console.log("Skipping Approval logs logic because one condition is not met", { client, isApprovalLogsFetched, isConfirming });
+      return;
+    }
+
+    const getApprovalLogs = async () => {
+      try {
+        console.log("Fetching Approval logs...");
+        const toBlock = await client.getBlockNumber();
+        console.log("Current block number is:", toBlock);
+
+        const logs = await client.getContractEvents({
+          address: tokenAddress,
+          abi: erc20Abi,
+          eventName: "Approval",
+          args: {
+            owner: account.address,
+            spender: getGatewayContractAddress("Base") as `0x${string}`,
+          },
+          fromBlock: toBlock - BigInt(50),
+          toBlock: toBlock,
+        });
+        console.log("Approval logs fetched:", logs);
+
+        if (logs.length > 0) {
+          const decodedLog = decodeEventLog({
+            abi: erc20Abi,
+            eventName: "Approval",
+            data: logs[0].data,
+            topics: logs[0].topics,
+          });
+          console.log("Approval logs decoded:", decodedLog);
+
+          if (decodedLog.args.value === parseUnits(amount!.toString(), tokenDecimals!)) {
+            console.log("Approval logs match the amount. Proceeding to create order...");
+            clearInterval(intervalId);
+            setIsApprovalLogsFetched(true);
+            await createOrder();
+          }
+          console.log("Approval logs do not match the amount. Waiting for correct logs...");
+        }
+      } catch (error) {
+        console.error("Error fetching Approval logs:", error);
+      }
+    };
+
+    // Initial call
+    getApprovalLogs();
+
+    // Set up polling
+    intervalId = setInterval(getApprovalLogs, 2000);
+
+    // Cleanup function
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [client, isApprovalLogsFetched, isConfirming]);
+
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    console.log("isConfirming is:", isConfirming);
+    console.log("isOrderCreatedLogsFetched is:", isOrderCreatedLogsFetched);
     
-  //   if (!tokenDecimals) {
-  //     console.error("Token decimals not found");
-  //     setErrorMessage("Token decimals not found. Please try again.");
-  //     return false;
-  //   }
 
-  //   const data = encodeFunctionData({
-  //     abi: erc20Abi,
-  //     functionName: "approve",
-  //     args: [
-  //       getGatewayContractAddress("Base") as `0x${string}`,
-  //       parseUnits(amount!.toString(), tokenDecimals!), 
-  //     ],
-  //   });
-  
-  //   try {
-  //     const txResult = await approveGateway({
-  //       abi: erc20Abi,
-  //       address: tokenAddress,
-  //       functionName: "approve",
-  //       args: [
-  //         getGatewayContractAddress("Base") as `0x${string}`,
-  //         parseUnits(amount!.toString(), tokenDecimals!), 
-  //       ],
-  //     });
-  //     console.log("Gateway approved successfully:", txResult);
-  
-  //     setIsGatewayApproved(true);
-  //     return true;
-  //   } catch (error) {
-  //     console.error("Failed to approve gateway:", error);
-  //     setErrorMessage("Gateway approval failed. Please try again.");
-  //     return false;
-  //   }
-  // };
+    if (!client || isApprovalLogsFetched || !isConfirming) {
+      console.log("Skipping order created logs logic because one condition is not met", { client, isApprovalLogsFetched, isConfirming });
+      return;
+    }
+    
+
+    const getOrderCreatedLogs = async () => {
+      try {
+        const toBlock = await client.getBlockNumber();
+        const logs = await client.getContractEvents({
+          address: getGatewayContractAddress("Base") as `0x${string}`,
+          abi: gatewayAbi,
+          eventName: "OrderCreated",
+          args: {
+            sender: account.address,
+            token: tokenAddress,
+          },
+          fromBlock: toBlock - BigInt(10),
+          toBlock: toBlock,
+        });
+        console.log("OrderCreated logs fetched:", logs); 
+
+        if (logs.length > 0) {
+          const decodedLog = decodeEventLog({
+            abi: gatewayAbi,
+            eventName: "OrderCreated",
+            data: logs[0].data,
+            topics: logs[0].topics,
+          });
+          console.log("OrderCreated logs fetched:", decodedLog);
+
+          setIsOrderCreatedLogsFetched(true);
+          clearInterval(intervalId);
+          setOrderId(decodedLog.args.orderId);
+          setCreatedAt(new Date().toISOString());
+          setTransactionStatus("pending");
+        }
+      } catch (error) {
+        console.error("Error fetching OrderCreated logs:", error);
+      }
+    };
+
+    // Initial call
+    getOrderCreatedLogs();
+
+    // Set up polling
+    intervalId = setInterval(getOrderCreatedLogs, 2000);
+
+    // Cleanup function
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [client, isOrderCreatedLogsFetched, isConfirming]);
+
 
 
   const { data: smartTokenBalanceInWei } = useReadContract({
@@ -164,7 +255,7 @@ export default function SellReview() {
     functionName: "allowance",
     args: [
       getAddress("0x00000f79b7faf42eebadba19acc07cd08af44789"),
-      getGatewayContractAddress(account.chain?.name) as `0x${string}`,
+      getGatewayContractAddress("Base") as `0x${string}`,
     ],
   });
   
@@ -174,7 +265,7 @@ export default function SellReview() {
     functionName: "allowance",
     args: [
       account.address!,
-      getGatewayContractAddress(account.chain?.name) as `0x${string}`,
+      getGatewayContractAddress("Base") as `0x${string}`,
     ],
   });
   
@@ -260,8 +351,7 @@ export default function SellReview() {
   const createOrder = async () => {
     try {
       const params = await prepareCreateOrderParams();
-      // setCreatedAt(new Date().toISOString());
-      let orderId: string | null = null;
+      setCreatedAt(new Date().toISOString());
 
 
       if (smartTokenBalance >= parseFloat(amount!.toString())) {
@@ -293,7 +383,7 @@ export default function SellReview() {
               abi: erc20Abi,
               functionName: "approve",
               args: [
-                getGatewayContractAddress(account.chain?.name) as `0x${string}`,
+                getGatewayContractAddress("BAse") as `0x${string}`,
                 parseUnits(amount!.toString(), tokenDecimals!),
               ],
             }),
@@ -320,7 +410,7 @@ export default function SellReview() {
         setIsOrderCreated(true);
       } else {
         // Create order
-        const response = await createOrderAsync({
+        await createOrderAsync({
           abi: gatewayAbi,
           address: getGatewayContractAddress(
             "Base",
@@ -336,11 +426,8 @@ export default function SellReview() {
             params.messageHash,
           ],
         });
-        console.log("Create order response:", response);
-        // orderId = response? || null;
-
+        
         setIsOrderCreated(true);
-        return response;
       }
     } catch (e: any) {
       if (error) {
@@ -352,10 +439,24 @@ export default function SellReview() {
       setIsConfirming(false);
     }
   };
+  useEffect(() => {
+    if (orderId) {
+      console.log("OrderId is now available in state:", orderId);
+    }
+  }, [orderId]);
+  useEffect(() => {
+    if (!account?.address) {
+      console.log("Wallet disconnected, please reconnect");
+    } else {
+      console.log("Account is connected:", account.address);
+    }
+  }, [account]);
+  
 
   const handlePaymentConfirmation = async () => {
     try {
-      setIsConfirming(true);
+        setIsConfirming(true);
+        console.log("Starting payment confirmation process... set isConfirming to true");
 
       // if (gatewayAllowance < parseFloat(amount!)) {
       //   console.log("Gateway not approved. Attempting approval...");
@@ -385,16 +486,19 @@ export default function SellReview() {
           setIsConfirming(false);
           return;
         }
-      // } else {
-      //   console.log("Gateway already approved. Proceeding...");
-      //   setIsGatewayApproved(true);
-      // }
+        const receipt = await client!.waitForTransactionReceipt({ hash: txResult });
+        console.log("Gateway approval receipt:", receipt);
+        if (receipt.status === "success") {	
+          console.log("Gateway approval receipt:", receipt);
+          await createOrder();
+          setIsConfirming(false);
+          
+        } else {
+          console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
+          setErrorMessage("Gateway approval failed. Please try again.");
+          setIsConfirming(false);
+        }
   
-        const response = await createOrder();
-        console.log("Order created successfully:", response);
-    
-        console.log("Payment confirmed successfully.");
-        setIsConfirming(false);
     } catch (error) {
       console.error("Error during payment confirmation:", error);
       setErrorMessage("An error occurred while confirming the payment.");
@@ -402,64 +506,33 @@ export default function SellReview() {
     }
   };
 
-  const handleCreateOrder = async () => {
-    console.log("Creating order...");
-
-    try {
-      await createOrder();
-      console.log("Order created successfully");
-      
-      setOrderStatus('completed');
-    } catch (error) {
-      console.error('Error creating order:', error);
-      setOrderStatus('failed');
-      setErrorMessage((error as BaseError)?.shortMessage || 'An error occurred while creating the order.');
-    }
-  };
-
-
 
 
   const handleConfirm = async () => {
     setIsProcessing(true);
   
     setGatewayStatus('active');
+    setTransactionStatus('active');
 
     console.log("Starting confirmation process...");
 
-    // if (!isGatewayApproved) {
-    //   await handleGatewayApproval(); 
-    //   if (!isGatewayApproved) {
-    //     console.error("Gateway approval failed or not reflected in state.");
-    //     setIsProcessing(false);
-    //     return;
-    //   }
-    // } else {
-    //   console.log("Gateway is already approved. Proceeding to create order...");
-    // }
-    // setGatewayStatus('completed');
-  
-    setOrderStatus('active');
-    // if (isGatewayApproved) {
-    //   console.log("Gateway is approved. Proceeding to create order...");
-    //   await handleCreateOrder();
-    // }
     try{
       await handlePaymentConfirmation();
       console.log("Payment confirmed successfully");
-      // await handleCreateOrder();
       setGatewayStatus('completed');
+      setTransactionStatus('completed');
 
     } catch (error) {
       console.error('Error creating order:', error);
       setOrderStatus('failed');
+      setTransactionStatus('failed');
       setErrorMessage((error as BaseError)?.shortMessage || 'An error occurred while creating the order.');
     }
     
-    setOrderStatus('completed');
   
     setIsProcessing(false);
-    router.push('/sell/status');
+    router.push('/sell/status')
+    
   };
   
 
