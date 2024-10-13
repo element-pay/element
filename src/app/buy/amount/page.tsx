@@ -1,16 +1,27 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
 import Link from 'next/link';
 import styles from './page.module.css';
 import ProgressBar from '../../../components/ProgressBar/ProgressBar';
 import MenuButton from '../../../components/MenuButton/MenuButton';
 
 export default function BuyAmount() {
+  const [amount, setAmount] = useState('1582');
+  const [receiveAmount, setReceiveAmount] = useState('10');
+
   const steps = [
-    { label: 'Amount', status: 'active' as 'completed', number: 1 },
-    { label: 'Wallet', status: 'upcoming' as 'active', number: 2 },
-    { label: 'Verify', status: 'upcoming' as 'upcoming', number: 3 },
+    { label: 'Amount', status: 'active' as 'active', number: 1 },
+    { label: 'Wallet', status: 'upcoming' as 'upcoming', number: 2 },
+    { label: 'Review', status: 'upcoming' as 'upcoming', number: 3 },
     { label: 'Order', status: 'upcoming' as 'upcoming', number: 4 }
   ];
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount(e.target.value);
+    // You would typically calculate the receive amount based on the exchange rate here
+    setReceiveAmount((parseFloat(e.target.value) / 158.2).toFixed(2));
+  };
 
   return (
     <div className={styles.container}>
@@ -25,7 +36,7 @@ export default function BuyAmount() {
           </div>
           <MenuButton />
         </div>
-        <ProgressBar steps={steps} currentStep={2} />
+        <ProgressBar steps={steps} currentStep={1} />
         <div className={styles.content}>
           <div className={styles.paymentMethod}>
             <span>Payment method:</span>
@@ -38,26 +49,23 @@ export default function BuyAmount() {
           <div className={styles.exchange}>
             <div className={styles.inputGroup}>
               <label>You Pay</label>
-              <input type="text" value="1582" />
+              <input type="text" value={amount} onChange={handleAmountChange} />
               <span className={styles.currency}>KES</span>
             </div>
             <div className={styles.inputGroup}>
               <label>You Receive</label>
-              <input type="text" value="10" />
+              <input type="text" value={receiveAmount} readOnly />
               <span className={styles.currency}>USDC</span>
             </div>
           </div>
           <div className={styles.rate}>
-            1 USDC = 153.44 KES
+            1 USDC = 158.2 KES
             <span className={styles.updateTime}>Quote updates in 21s</span>
           </div>
           <div className={styles.fee}>
             Estimated Fee <span className={styles.feeAmount}>0.31 USDC</span>
           </div>
-          <div className={styles.reward}>
-            Your order might be eligible for a reward of 125 cKES
-          </div>
-          <Link href="/buy/wallet" className={styles.nextButton}>
+          <Link href={`/buy/wallet?amount=${amount}&receiveAmount=${receiveAmount}`} className={styles.nextButton}>
             Next: Specify your wallet
           </Link>
         </div>
