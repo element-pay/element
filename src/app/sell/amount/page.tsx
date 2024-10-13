@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './page.module.css';
 import ProgressBar from '../../../components/ProgressBar/ProgressBar';
 import MenuButton from '../../../components/MenuButton/MenuButton';
 import ConnectWalletButton from '../../../components/ConnectWalletButton/ConnectWalletButton';
+import { fetchRate, fetchSupportedInstitutions } from '@/app/api/aggregator';
+import { InstitutionProps } from '@/app/types';
 
 interface Token {
   symbol: string;
@@ -33,14 +35,6 @@ const receiveOptions = [
   { label: 'GHS', country: 'GH' },
 ];
 
-const banks: Bank[] = [
-  { id: '1', name: 'Equity Bank', code: 'EQT' },
-  { id: '2', name: 'KCB Bank', code: 'KCB' },
-  { id: '3', name: 'Standard Chartered', code: 'SCB' },
-  { id: '4', name: 'Absa Bank', code: 'ABS' },
-  { id: '5', name: 'Co-operative Bank', code: 'COB' },
-];
-
 export default function SellAmount() {
   const [selectedToken, setSelectedToken] = useState<Token>(tokens[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -54,6 +48,41 @@ export default function SellAmount() {
   const [accountNumber, setAccountNumber] = useState('');
   const [memo, setMemo] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+
+
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [loadingBanks, setLoadingBanks] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const loadBanks = async () => {
+      setLoadingBanks(true);
+      setError(null);
+      try {
+        // Fetches banks based on the selected receiveCurrency
+        const fetchedBanks: InstitutionProps[] = await fetchSupportedInstitutions(receiveCurrency.label);
+  
+        // Maps fetchedBanks to the Bank type by adding an `id` field
+        const mappedBanks: Bank[] = fetchedBanks.map((bank, index) => ({
+          id: String(index + 1),
+          name: bank.name,
+          code: bank.code,
+        }));
+  
+        setBanks(mappedBanks);
+      } catch (err) {
+        setError('Failed to load banks. Please try again.');
+      } finally {
+        setLoadingBanks(false);
+      }
+    };
+  
+    if (receiveCurrency) {
+      loadBanks();
+    }
+  }, [receiveCurrency]);
+  
+  
+
 
   const steps = [
     { label: 'Amount', status: 'active' as 'active', number: 1 },
@@ -70,17 +99,43 @@ export default function SellAmount() {
     return '';
   };
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAmountChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newAmount = e.target.value;
     setAmount(newAmount);
-    setReceivedAmount(calculateReceivedAmount(newAmount, selectedToken.rate));
+  
+    try {
+      const rateResponse = await fetchRate({
+        token: selectedToken.symbol,
+        amount: parseFloat(newAmount),
+        currency: receiveCurrency.label
+      });
+      setReceivedAmount(calculateReceivedAmount(newAmount, rateResponse.data));
+    } catch (error) {
+      console.error("Error fetching rate:", error);
+    }
   };
+  
 
-  const handleTokenSelect = (token: Token) => {
+  const handleTokenSelect = async (token: Token) => {
     setSelectedToken(token);
-    setReceivedAmount(calculateReceivedAmount(amount, token.rate));
+    
+    try {
+      const rateResponse = await fetchRate({
+        token: token.symbol,
+        amount: parseFloat(amount),
+        currency: receiveCurrency.label,
+      });
+      
+      const rate = rateResponse.data;
+      setReceivedAmount(calculateReceivedAmount(amount, rate));
+    } catch (error) {
+      console.error("Error fetching rate:", error);
+    }
+  
     setIsDropdownOpen(false);
   };
+  
+  
 
   const handleReceiveCurrencySelect = (option: { label: string; country: string }) => {
     setReceiveCurrency(option);
@@ -157,6 +212,11 @@ export default function SellAmount() {
           ) : (
             <div className={styles.bankDetails}>
               <label htmlFor="bank">Select Bank:</label>
+              {loadingBanks ? (
+                <p>Loading banks...</p>
+              ) : error ? (
+                <p>{error}</p>
+              ) : (
               <select 
                 id="bank"
                 className={styles.bankSelect}
@@ -165,12 +225,12 @@ export default function SellAmount() {
               >
                 <option value="">Select a bank...</option>
                 {banks.map((bank) => (
-                  <option key={bank.id} value={bank.id}>
+                  <option key={bank.code} value={bank.code}>
                     {bank.name}
                   </option>
                 ))}
               </select>
-
+              )}
               <label htmlFor="accountNumber">Account Number:</label>
               <input
                 id="accountNumber"
@@ -275,9 +335,10 @@ export default function SellAmount() {
           </div>
 
           <div className={styles.rate}>
-            1 {selectedToken.symbol} = {selectedToken.rate} {receiveCurrency.label}
+            1 {selectedToken.symbol} = {receivedAmount} {receiveCurrency.label}
             <span className={styles.updateTime}>Quote updates in 29s</span>
           </div>
+
           <div className={styles.fee}>
             Estimated Fee <span className={styles.feeAmount}>0.25 {selectedToken.symbol}</span>
           </div>
