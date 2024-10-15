@@ -16,7 +16,7 @@ export const initializeProvider = async () => {
 };
 
 // Function to create order by interacting with the contract
-export const createOrder = async (walletAddress: string, amount: string) => {
+export const createOrder = async (walletAddress: string, amount: string, receiveAmount: string) => {
   try {
     const provider = await initializeProvider();
     if (!provider) return;

@@ -34,9 +34,14 @@ export default function BuyReview() {
       setGatewayStatus("active");
 
       // Call the createOrder function from contractUtils
-      const tx = await createOrder(walletAddress, amount);
+      if (walletAddress && amount && receiveAmount) {
+        const tx = await createOrder(walletAddress, amount, receiveAmount);
+        console.log("Transaction successful: ", tx);
+      } else {
+        throw new Error("Missing required transaction details.");
+      }
 
-      console.log("Transaction successful: ", tx);
+      console.log("Transaction successful");
 
       setGatewayStatus("completed");
 
