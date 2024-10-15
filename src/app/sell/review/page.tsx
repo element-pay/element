@@ -128,7 +128,6 @@ export default function SellReview() {
       try {
         console.log("Fetching Approval logs...");
         const toBlock = await client.getBlockNumber();
-        console.log("Current block number is:", toBlock);
 
         const logs = await client.getContractEvents({
           address: tokenAddress,
@@ -157,8 +156,9 @@ export default function SellReview() {
             clearInterval(intervalId);
             setIsApprovalLogsFetched(true);
             await createOrder();
+          } else {
+            console.log("Approval logs do not match the amount. Waiting for correct logs...");
           }
-          console.log("Approval logs do not match the amount. Waiting for correct logs...");
         }
       } catch (error) {
         console.error("Error fetching Approval logs:", error);
@@ -184,7 +184,7 @@ export default function SellReview() {
     console.log("isOrderCreatedLogsFetched is:", isOrderCreatedLogsFetched);
     
 
-    if (!client || isApprovalLogsFetched || !isConfirming) {
+    if (!client || !isOrderCreated) {
       console.log("Skipping order created logs logic because one condition is not met", { client, isApprovalLogsFetched, isConfirming });
       return;
     }
@@ -193,6 +193,7 @@ export default function SellReview() {
     const getOrderCreatedLogs = async () => {
       try {
         const toBlock = await client.getBlockNumber();
+        console.log("Current block number:", toBlock);
         const logs = await client.getContractEvents({
           address: getGatewayContractAddress("Base") as `0x${string}`,
           abi: gatewayAbi,
@@ -201,7 +202,7 @@ export default function SellReview() {
             sender: account.address,
             token: tokenAddress,
           },
-          fromBlock: toBlock - BigInt(10),
+          fromBlock: toBlock - BigInt(50),
           toBlock: toBlock,
         });
         console.log("OrderCreated logs fetched:", logs); 
@@ -236,7 +237,7 @@ export default function SellReview() {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [client, isOrderCreatedLogsFetched, isConfirming]);
+  }, [client, isOrderCreated]);
 
 
 
@@ -350,12 +351,20 @@ export default function SellReview() {
 
   const createOrder = async () => {
     try {
+      console.log("Starting createOrder...");
       const params = await prepareCreateOrderParams();
       setCreatedAt(new Date().toISOString());
+      console.log("Order params prepared:", params);
+
+      setCreatedAt(new Date().toISOString());
+
+      console.log("Smart token balance:", smartTokenBalance);
+      console.log("Amount:", amount);
 
 
       if (smartTokenBalance >= parseFloat(amount!.toString())) {
         // Create order with sponsored user operation
+        console.log("Proceeding with sponsored user operation...");
         let transactions = [
           {
             to: getGatewayContractAddress("Base") as `0x${string}`,
@@ -377,6 +386,7 @@ export default function SellReview() {
 
         if (smartGatewayAllowance < parseFloat(amount!)) {
           // Approve gateway contract to spend token
+          console.log("Approving gateway contract to spend token...");
           transactions.push({
             to: tokenAddress,
             data: encodeFunctionData({
@@ -392,6 +402,7 @@ export default function SellReview() {
 
         if (paymasterAllowance < parseFloat(amount!)) {
           // Approve paymaster contract to spend token
+          console.log("Approving paymaster contract to spend token...");
           transactions.push({
             to: tokenAddress,
             data: encodeFunctionData({
@@ -404,13 +415,16 @@ export default function SellReview() {
             }),
           });
         }
+        console.log("Executing mutate with transactions:", transactions);
 
         mutate({ transactions });
         
         setIsOrderCreated(true);
+        console.log("Order creation completed with mutate.");
       } else {
         // Create order
-        await createOrderAsync({
+        console.log("Proceeding to create order directly...");
+        const response = await createOrderAsync({
           abi: gatewayAbi,
           address: getGatewayContractAddress(
             "Base",
@@ -426,7 +440,7 @@ export default function SellReview() {
             params.messageHash,
           ],
         });
-        
+        console.log("Create order response:", response);
         setIsOrderCreated(true);
       }
     } catch (e: any) {
@@ -452,59 +466,93 @@ export default function SellReview() {
     }
   }, [account]);
   
-
   const handlePaymentConfirmation = async () => {
     try {
-        setIsConfirming(true);
-        console.log("Starting payment confirmation process... set isConfirming to true");
+      setIsConfirming(true);
 
-      // if (gatewayAllowance < parseFloat(amount!)) {
-      //   console.log("Gateway not approved. Attempting approval...");
+      if (smartTokenBalance >= parseFloat(amount!.toString())) {
+        await createOrder();
+      } else {
+        // Approve gateway contract to spend token
+        if (gatewayAllowance < parseFloat(amount!.toString())) {
+          await approveGateway({
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [
+              getAddress(getGatewayContractAddress(account.chain?.name)!),
+              parseUnits(amount!.toString(), tokenDecimals!),
+            ],
+          });
 
-        console.log("Attempting to approve gateway with params:", {
-          tokenAddress,
-          amount: parseUnits(amount!.toString(), tokenDecimals!)
-        });
-        
-  
-        const txResult = await approveGateway({
-          abi: erc20Abi,
-          address: tokenAddress,
-          functionName: "approve",
-          args: [
-            getGatewayContractAddress("Base") as `0x${string}`,
-            parseUnits(amount!.toString(), tokenDecimals!),
-          ],
-        });
-  
-        if (txResult) {
-          console.log("Gateway approved successfully:", txResult);
           setIsGatewayApproved(true);
         } else {
-          console.error("Gateway approval failed. No result returned.");
-          setErrorMessage("Gateway approval failed. Please try again.");
-          setIsConfirming(false);
-          return;
-        }
-        const receipt = await client!.waitForTransactionReceipt({ hash: txResult });
-        console.log("Gateway approval receipt:", receipt);
-        if (receipt.status === "success") {	
-          console.log("Gateway approval receipt:", receipt);
           await createOrder();
-          setIsConfirming(false);
-          
-        } else {
-          console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
-          setErrorMessage("Gateway approval failed. Please try again.");
-          setIsConfirming(false);
         }
-  
-    } catch (error) {
-      console.error("Error during payment confirmation:", error);
-      setErrorMessage("An error occurred while confirming the payment.");
+      }
+    } catch (e: any) {
+      if (error) {
+        setErrorMessage((error as BaseError).shortMessage || error!.message);
+      } else {
+        setErrorMessage((e as BaseError).shortMessage);
+      }
+      // setErrorCount((prevCount) => prevCount + 1);
       setIsConfirming(false);
     }
   };
+
+  // const handlePaymentConfirmation = async () => {
+  //   try {
+  //       setIsConfirming(true);
+  //       console.log("Starting payment confirmation process... set isConfirming to true");
+
+  //     // if (gatewayAllowance < parseFloat(amount!)) {
+  //     //   console.log("Gateway not approved. Attempting approval...");
+
+  //       console.log("Attempting to approve gateway with params:", {
+  //         tokenAddress,
+  //         amount: parseUnits(amount!.toString(), tokenDecimals!)
+  //       });
+        
+  
+  //       const txResult = await approveGateway({
+  //         abi: erc20Abi,
+  //         address: tokenAddress,
+  //         functionName: "approve",
+  //         args: [
+  //           getGatewayContractAddress("Base") as `0x${string}`,
+  //           parseUnits(amount!.toString(), tokenDecimals!),
+  //         ],
+  //       });
+  
+  //       if (txResult) {
+  //         console.log("Gateway approved successfully:", txResult);
+  //         setIsGatewayApproved(true);
+  //       } else {
+  //         console.error("Gateway approval failed. No result returned.");
+  //         setErrorMessage("Gateway approval failed. Please try again.");
+  //         setIsConfirming(false);
+  //         return;
+  //       }
+  //       const receipt = await client!.waitForTransactionReceipt({ hash: txResult });
+  //       console.log("Gateway approval receipt:", receipt);
+  //       if (receipt.status === "success") {	
+  //         console.log("Gateway approval receipt:", receipt);
+  //         await createOrder();
+  //         setIsConfirming(false);
+          
+  //       } else {
+  //         console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
+  //         setErrorMessage("Gateway approval failed. Please try again.");
+  //         setIsConfirming(false);
+  //       }
+  
+  //   } catch (error) {
+  //     console.error("Error during payment confirmation:", error);
+  //     setErrorMessage("An error occurred while confirming the payment.");
+  //     setIsConfirming(false);
+  //   }
+  // };
 
 
 
@@ -528,10 +576,22 @@ export default function SellReview() {
       setTransactionStatus('failed');
       setErrorMessage((error as BaseError)?.shortMessage || 'An error occurred while creating the order.');
     }
-    
+    const waitForOrderLogs = new Promise<void>((resolve, reject) => {
+      const intervalId = setInterval(() => {
+        if (isOrderCreatedLogsFetched) {
+          clearInterval(intervalId);
+          resolve();
+        }
+      }, 1000);
+    });
+
+    // Wait for the logs
+    await waitForOrderLogs;
+
+    // Now, safely navigate to the next page
+    router.push('/sell/status');
   
     setIsProcessing(false);
-    router.push('/sell/status')
     
   };
   
