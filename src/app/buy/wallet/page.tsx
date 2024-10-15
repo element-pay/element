@@ -26,6 +26,11 @@ export default function BuyWallet() {
     setWalletAddress(e.target.value);
   };
 
+  const [phone, setPhone] = useState('');
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhone(e.target.value);
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.widget}>
@@ -43,9 +48,18 @@ export default function BuyWallet() {
             value={walletAddress}
             onChange={handleWalletChange}
           />
+          <h2 className='{styles.title}'>Phone number to pay with M-PESA</h2>
+          <input 
+            type="text" 
+            placeholder="Enter phone number" 
+            className={styles.input} 
+            value={phone}
+            onChange={handlePhoneChange}
+          />
+
           <ConnectWalletButton />
           <Link 
-            href={`/buy/review?amount=${amount}&receiveAmount=${receiveAmount}&walletAddress=${walletAddress}`} 
+            href={`/buy/review?amount=${amount}&receiveAmount=${receiveAmount}&walletAddress=${walletAddress}&phone=${phone}`}
             className={styles.nextButton}
           >
             Next: Review

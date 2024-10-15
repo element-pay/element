@@ -59,7 +59,7 @@ export default function BuyAmount() {
             </div>
           </div>
           <div className={styles.rate}>
-            1 USDC = 158.2 KES
+            1 USDC = 130.2 KES
             <span className={styles.updateTime}>Quote updates in 21s</span>
           </div>
           <div className={styles.fee}>
