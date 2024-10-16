@@ -6,7 +6,7 @@ import styles from "./page.module.css";
 import BackButton from "../../../components/BackButton/BackButton";
 import MenuButton from "../../../components/MenuButton/MenuButton";
 import ProgressBar from "../../../components/ProgressBar/ProgressBar";
-import { createOrder } from "../../utils/contractUtils";
+import { createOrder } from "../../utils/contractUtils";  // Import the createOrder function
 
 const steps = [
   { label: "Amount", status: "completed" as "completed", number: 1 },
@@ -35,7 +35,7 @@ export default function BuyReview() {
 
       // Call the createOrder function from contractUtils
       if (walletAddress && amount && receiveAmount) {
-        const tx = await createOrder(walletAddress, amount, receiveAmount);
+        const tx = await createOrder(walletAddress, amount);
         console.log("Transaction successful: ", tx);
       } else {
         throw new Error("Missing required transaction details.");
