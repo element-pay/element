@@ -6,6 +6,9 @@ import styles from './page.module.css';
 import BackButton from '../../../components/BackButton/BackButton';
 import MenuButton from '../../../components/MenuButton/MenuButton';
 import ProgressBar from '../../../components/ProgressBar/ProgressBar';
+import { useSimpleOrderHandler } from '@/app/utils/contractUtils';
+import { ethers } from 'ethers';
+import { createOrder, depositUSDC, withdrawUSDC, settleOrder, getOrder } from '../../utils/contractUtils';
 
 const steps = [
   { label: 'Amount', status: 'completed' as 'completed', number: 1 },
@@ -17,6 +20,7 @@ const steps = [
 export default function SellReview() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { createOrder, depositUSDC, withdrawUSDC, settleOrder, getOrder } = useSimpleOrderHandler();
 
   // Get all possible parameters
   const amount = searchParams.get('amount');
@@ -41,14 +45,30 @@ export default function SellReview() {
   const handleConfirm = async () => {
     setIsProcessing(true);
     setGatewayStatus('active');
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    setGatewayStatus('completed');
 
-    setOrderStatus('active');
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    setOrderStatus('completed');
+    try {
+      // Step 1: Call the createOrder function from the contract
+      if (amount) {
+        console.log('Calling createOrder function...');
+        const orderTx = await createOrder(searchParams.get('walletAddress') || '', ethers.utils.parseUnits(amount, 18));
+        console.log('Order transaction:', orderTx);
+      }
 
-    router.push('/sell/status');
+      setGatewayStatus('completed');
+
+      setOrderStatus('active');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      setOrderStatus('completed');
+
+      // Navigate to status page
+      router.push('/sell/status');
+    } catch (error) {
+      console.error("Error processing transaction:", error);
+      setGatewayStatus('inactive');
+      setOrderStatus('inactive');
+    }
+
+    setIsProcessing(false);
   };
 
   return (

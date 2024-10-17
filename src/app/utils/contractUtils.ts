@@ -1,24 +1,50 @@
 import { ethers } from 'ethers';
-import { useContract, useSigner } from 'wagmi';
-import SimpleOrderHandlerABI from './SimpleOrderHandlerABI.json'; // ABI of the contract
+import { useAccount, usePublicClient, useContractWrite } from 'wagmi';
+import SimpleOrderHandlerABI from './SimpleOrderHandlerABI.json';
 
 const contractAddress = 'YOUR_CONTRACT_ADDRESS';
 
+// This hook should be used inside a React component
 export function useSimpleOrderHandler() {
-  const { data: signer } = useSigner();
+  const { address } = useAccount();
+  const publicClient = usePublicClient();
 
-  const contract = useContract({
-    addressOrName: contractAddress,
-    contractInterface: SimpleOrderHandlerABI,
-    signerOrProvider: signer,
+  const { write: createOrderWrite, isLoading, isSuccess, error } = useContractWrite({
+    address: contractAddress,
+    abi: SimpleOrderHandlerABI,
+    functionName: 'createOrder',
   });
 
-  return contract;
+  const handleCreateOrder = async (amount: string, receiveAmount: string) => {
+    if (!address) {
+      throw new Error('Wallet not connected');
+    }
+
+    const parsedAmount = ethers.utils.parseUnits(amount, 6);
+    
+    await createOrderWrite({
+      args: [address, parsedAmount],
+    });
+  };
+
+  return {
+    createOrder: handleCreateOrder,
+    isLoading,
+    isSuccess,
+    error,
+  };
 }
 
-export async function createOrder(walletAddress, amount, receiveAmount) {
-  const contract = useSimpleOrderHandler();
-  const tx = await contract.createOrder(walletAddress, ethers.utils.parseUnits(amount, 6));
-  await tx.wait();
-  return tx;
+// This function can be used outside of React components
+export async function getOrderDetails(orderId: string) {
+  const publicClient = await import('wagmi/actions').then(module => module.getPublicClient());
+  
+  const data = await publicClient.readContract({
+    address: contractAddress,
+    abi: SimpleOrderHandlerABI,
+    functionName: 'getOrder',
+    args: [orderId],
+  });
+
+  return data;
 }
