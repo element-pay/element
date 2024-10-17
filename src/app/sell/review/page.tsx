@@ -108,10 +108,28 @@ export default function SellReview() {
       const tokenDecimals = fetchSupportedTokens("Base")?.find(t => t.symbol.toUpperCase() === token)?.decimals;
       setGatewayAllowance(Number(formatUnits(gatewayAllowanceInWei, tokenDecimals!)));
       if (gatewayAllowanceInWei > parseUnits(amount!.toString(), tokenDecimals!)) {
+        const allowance = Number(formatUnits(gatewayAllowanceInWei, tokenDecimals!));
+        const requiredAmount = parseFloat(amount!.toString());
+
+        console.log(`Allowance: ${allowance}, Required Amount: ${requiredAmount}`);
         setIsGatewayApproved(true);
       }
   }
   }, [gatewayAllowanceInWei, tokenAddress, amount]);
+
+  const resetAllowance = async () => {
+    await approveGateway({
+      abi: erc20Abi,
+      address: tokenAddress,
+      functionName: "approve",
+      args: [
+        getGatewayContractAddress("Base") as `0x${string}`,
+        BigInt(0),
+      ],
+    });
+    console.log("Allowance reset to 0");
+  };
+  
 
 
   useEffect(() => {
@@ -184,7 +202,7 @@ export default function SellReview() {
     console.log("isOrderCreatedLogsFetched is:", isOrderCreatedLogsFetched);
     
 
-    if (!client || !isOrderCreated) {
+    if (!client || isOrderCreatedLogsFetched) {
       console.log("Skipping order created logs logic because one condition is not met", { client, isApprovalLogsFetched, isConfirming });
       return;
     }
@@ -192,9 +210,9 @@ export default function SellReview() {
 
     const getOrderCreatedLogs = async () => {
       try {
-        const toBlock = await client.getBlockNumber();
+        const toBlock = await client!.getBlockNumber();
         console.log("Current block number:", toBlock);
-        const logs = await client.getContractEvents({
+        const logs = await client!.getContractEvents({
           address: getGatewayContractAddress("Base") as `0x${string}`,
           abi: gatewayAbi,
           eventName: "OrderCreated",
@@ -237,7 +255,7 @@ export default function SellReview() {
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [client, isOrderCreated]);
+  }, [client, isOrderCreatedLogsFetched]);
 
 
 
@@ -393,7 +411,7 @@ export default function SellReview() {
               abi: erc20Abi,
               functionName: "approve",
               args: [
-                getGatewayContractAddress("BAse") as `0x${string}`,
+                getGatewayContractAddress("Base") as `0x${string}`,
                 parseUnits(amount!.toString(), tokenDecimals!),
               ],
             }),
@@ -417,7 +435,33 @@ export default function SellReview() {
         }
         console.log("Executing mutate with transactions:", transactions);
 
-        mutate({ transactions });
+        try {
+          // mutate({ transactions });
+          const response = await createOrderAsync({
+            abi: gatewayAbi,
+            address: getGatewayContractAddress(
+              "Base",
+            ) as `0x${string}`,
+            functionName: "createOrder",
+            args: [
+              params.token,
+              params.amount,
+              params.rate,
+              params.senderFeeRecipient,
+              params.senderFee,
+              params.refundAddress!,
+              params.messageHash,
+            ],
+          });
+          console.log("Create order response:", response);
+          setIsOrderCreated(true);
+          console.log("Order creation completed with mutate.");
+        }catch (error) {
+          console.error("Error creating order:", error);
+          setErrorMessage((error as BaseError).shortMessage || (error as BaseError).message);
+          setIsConfirming(false);
+        }
+
         
         setIsOrderCreated(true);
         console.log("Order creation completed with mutate.");
@@ -470,89 +514,74 @@ export default function SellReview() {
     try {
       setIsConfirming(true);
 
-      if (smartTokenBalance >= parseFloat(amount!.toString())) {
-        await createOrder();
-      } else {
-        // Approve gateway contract to spend token
-        if (gatewayAllowance < parseFloat(amount!.toString())) {
-          await approveGateway({
-            address: tokenAddress,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [
-              getAddress(getGatewayContractAddress(account.chain?.name)!),
-              parseUnits(amount!.toString(), tokenDecimals!),
-            ],
-          });
+      if (gatewayAllowance < parseFloat(amount!.toString())) {
+        // Approve gateway contract if not already approved
+        await handleGatewayAproval();
+        setIsGatewayApproved(true);
+      }
+      
+      // After approval, create the order
+      await createOrder();
 
+    } catch (e: any) {
+      setErrorMessage((e as BaseError).shortMessage || e!.message);
+      setIsConfirming(false);
+    }
+};
+
+
+  const handleGatewayAproval = async () => {
+    try {
+        // setIsConfirming(true);
+        // console.log("Starting payment confirmation process... set isConfirming to true");
+
+      // if (gatewayAllowance < parseFloat(amount!)) {
+      //   console.log("Gateway not approved. Attempting approval...");
+
+        console.log("Attempting to approve gateway with params:", {
+          tokenAddress,
+          amount: parseUnits(amount!.toString(), tokenDecimals!)
+        });
+        
+  
+        const txResult = await approveGateway({
+          abi: erc20Abi,
+          address: tokenAddress,
+          functionName: "approve",
+          args: [
+            getGatewayContractAddress("Base") as `0x${string}`,
+            parseUnits(amount!.toString(), tokenDecimals!),
+          ],
+        });
+  
+        if (txResult) {
+          console.log("Gateway approved successfully:", txResult);
           setIsGatewayApproved(true);
         } else {
-          await createOrder();
+          console.error("Gateway approval failed. No result returned.");
+          setErrorMessage("Gateway approval failed. Please try again.");
+          setIsConfirming(false);
+          return;
         }
-      }
-    } catch (e: any) {
-      if (error) {
-        setErrorMessage((error as BaseError).shortMessage || error!.message);
-      } else {
-        setErrorMessage((e as BaseError).shortMessage);
-      }
-      // setErrorCount((prevCount) => prevCount + 1);
+        const receipt = await client!.waitForTransactionReceipt({ hash: txResult });
+        console.log("Gateway approval receipt:", receipt);
+        if (receipt.status === "success") {	
+          console.log("Gateway approval receipt:", receipt);
+          await createOrder();
+          setIsConfirming(false);
+          
+        } else {
+          console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
+          setErrorMessage("Gateway approval failed. Please try again.");
+          setIsConfirming(false);
+        }
+  
+    } catch (error) {
+      console.error("Error during payment confirmation:", error);
+      setErrorMessage("An error occurred while confirming the payment.");
       setIsConfirming(false);
     }
   };
-
-  // const handlePaymentConfirmation = async () => {
-  //   try {
-  //       setIsConfirming(true);
-  //       console.log("Starting payment confirmation process... set isConfirming to true");
-
-  //     // if (gatewayAllowance < parseFloat(amount!)) {
-  //     //   console.log("Gateway not approved. Attempting approval...");
-
-  //       console.log("Attempting to approve gateway with params:", {
-  //         tokenAddress,
-  //         amount: parseUnits(amount!.toString(), tokenDecimals!)
-  //       });
-        
-  
-  //       const txResult = await approveGateway({
-  //         abi: erc20Abi,
-  //         address: tokenAddress,
-  //         functionName: "approve",
-  //         args: [
-  //           getGatewayContractAddress("Base") as `0x${string}`,
-  //           parseUnits(amount!.toString(), tokenDecimals!),
-  //         ],
-  //       });
-  
-  //       if (txResult) {
-  //         console.log("Gateway approved successfully:", txResult);
-  //         setIsGatewayApproved(true);
-  //       } else {
-  //         console.error("Gateway approval failed. No result returned.");
-  //         setErrorMessage("Gateway approval failed. Please try again.");
-  //         setIsConfirming(false);
-  //         return;
-  //       }
-  //       const receipt = await client!.waitForTransactionReceipt({ hash: txResult });
-  //       console.log("Gateway approval receipt:", receipt);
-  //       if (receipt.status === "success") {	
-  //         console.log("Gateway approval receipt:", receipt);
-  //         await createOrder();
-  //         setIsConfirming(false);
-          
-  //       } else {
-  //         console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
-  //         setErrorMessage("Gateway approval failed. Please try again.");
-  //         setIsConfirming(false);
-  //       }
-  
-  //   } catch (error) {
-  //     console.error("Error during payment confirmation:", error);
-  //     setErrorMessage("An error occurred while confirming the payment.");
-  //     setIsConfirming(false);
-  //   }
-  // };
 
 
 
@@ -569,12 +598,14 @@ export default function SellReview() {
       console.log("Payment confirmed successfully");
       setGatewayStatus('completed');
       setTransactionStatus('completed');
+      setIsProcessing(false);
 
     } catch (error) {
       console.error('Error creating order:', error);
       setOrderStatus('failed');
       setTransactionStatus('failed');
       setErrorMessage((error as BaseError)?.shortMessage || 'An error occurred while creating the order.');
+
     }
     const waitForOrderLogs = new Promise<void>((resolve, reject) => {
       const intervalId = setInterval(() => {
@@ -587,11 +618,10 @@ export default function SellReview() {
 
     // Wait for the logs
     await waitForOrderLogs;
-
-    // Now, safely navigate to the next page
-    router.push('/sell/status');
-  
     setIsProcessing(false);
+
+    router.push(`/sell/status?orderId=${orderId}`);
+  
     
   };
   
@@ -660,21 +690,31 @@ export default function SellReview() {
           <p>Failed transactions due to incorrect details may incur a refund fee.</p>
         </div>
 
+        <div>
+          Current Allowance: {gatewayAllowance} {token}
+          {isGatewayApproved && (
+            <button onClick={resetAllowance}>Reset Gateway</button>
+          )}
+        </div>
+
+
         <div className={styles.confirmationSteps}>
           <h3>Confirmation Steps</h3>
           <p>Your wallet will request two permissions to complete this transaction:</p>
           
           <div className={styles.step}>
-            <div className={`${styles.stepLoader} ${styles[gatewayStatus]}`}></div>
-            <span className={`${styles.stepText} ${gatewayStatus === 'inactive' ? styles.inactive : ''}`}>
-              1. Approve Gateway Permission
-            </span>
+          <div className={`${styles.stepLoader} ${isGatewayApproved ? styles.completed : styles.inactive}`}></div>
+          <span className={`${styles.stepText} ${!isGatewayApproved ? styles.inactive : ''}`}>
+            1. Approve Gateway Permission
+          </span>
+
           </div>
           <div className={styles.step}>
-            <div className={`${styles.stepLoader} ${styles[orderStatus]}`}></div>
-            <span className={`${styles.stepText} ${orderStatus === 'inactive' ? styles.inactive : ''}`}>
-              2. Create Order Transaction
-            </span>
+          <div className={`${styles.stepLoader} ${isOrderCreated ? styles.completed : styles.inactive}`}></div>
+          <span className={`${styles.stepText} ${!isOrderCreated ? styles.inactive : ''}`}>
+            2. Create Order Transaction
+          </span>
+
           </div>
         </div>
 

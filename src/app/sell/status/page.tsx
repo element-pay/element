@@ -13,54 +13,56 @@ import { AnimatePresence } from 'framer-motion';
 export default function SellDetails() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
-  const [transactionStatus, setTransactionStatus] = useState('pending'); // Transaction status
-  const [completedAt, setCompletedAt] = useState<string>("");
+
+  const [transactionStatus, setTransactionStatus] = useState('pending');
+  const [completedAt, setCompletedAt] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
 
   const orderId = searchParams.get('orderId') || '';
-  console.log("orderId is:", orderId);
+  console.log('orderId is:', orderId);
+
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
-
-    if (!orderId) {
-      console.error("Order ID is missing");
-      return;
-    }
 
     const getOrderStatus = async () => {
       try {
         const orderStatus = await fetchOrderStatus(orderId);
+        console.log('Fetched order status:', orderStatus);
 
-        if (orderStatus.data.status !== "pending") {
-          setTransactionStatus(orderStatus.data.status);
-          setCompletedAt(orderStatus.data.updatedAt);
+        const status = orderStatus.data.status;
+        setTransactionStatus(status);
+        setCompletedAt(orderStatus.data.updatedAt);
 
-          if (["validated", "settled"].includes(orderStatus.data.status)) {
-            clearInterval(intervalId);
-          }
+        if (['validated', 'settled', 'refunded'].includes(status)) {
+          clearInterval(intervalId);
         }
       } catch (error) {
-        console.error("Error fetching order status:", error);
+        console.error('Error fetching order status:', error);
+      } finally {
+        setLoading(false); // Ensure loading stops even on error
       }
     };
 
-    // Initial call
+    if (!orderId) {
+      console.error('Order ID is missing');
+      setLoading(false);
+      return;
+    }
+
+    // Initial fetch
     getOrderStatus();
 
     // Polling every 2 seconds
     intervalId = setInterval(getOrderStatus, 2000);
 
-    // Cleanup interval on component unmount
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, [orderId]);
 
   const handleBackButtonClick = () => {
     router.push('/');
   };
 
-  // Render progress message based on the status
   const getStatusMessage = () => {
     switch (transactionStatus) {
       case 'processing':
@@ -85,22 +87,34 @@ export default function SellDetails() {
           <BackButton />
           <MenuButton />
         </div>
-        
+
         <ProgressBar
           steps={[
-            { label: 'Details', status: 'completed', number: 1 }, 
-            { label: 'Payment', status: transactionStatus !== 'pending' ? 'completed' : 'active', number: 2 }, 
-            { label: 'Review', status: transactionStatus === 'validated' ? 'completed' : 'upcoming', number: 3 }
+            { label: 'Details', status: 'completed', number: 1 },
+            {
+              label: 'Payment',
+              status: transactionStatus !== 'pending' ? 'completed' : 'active',
+              number: 2,
+            },
+            {
+              label: 'Review',
+              status: transactionStatus === 'validated' ? 'completed' : 'upcoming',
+              number: 3,
+            },
           ]}
           currentStep={2}
         />
 
-
         <h2>Transaction Status</h2>
-        
+
         <div className={styles.statusContainer}>
           <AnimatePresence mode="wait">
-            {transactionStatus === 'pending' || transactionStatus === 'processing' ? (
+            {loading ? (
+              <div className={styles.spinner}>
+                <PiSpinnerBold className="animate-spin text-3xl text-orange-500" />
+                <p>Loading transaction status...</p>
+              </div>
+            ) : transactionStatus === 'pending' || transactionStatus === 'processing' ? (
               <div className={styles.spinner}>
                 <PiSpinnerBold className="animate-spin text-3xl text-orange-500" />
                 <p>{getStatusMessage()}</p>
@@ -121,7 +135,6 @@ export default function SellDetails() {
             </p>
           </div>
 
-          {/* Show back button if the transaction is completed */}
           {['validated', 'settled', 'refunded'].includes(transactionStatus) && (
             <button onClick={handleBackButtonClick} className={styles.nextButton}>
               Back to Home
