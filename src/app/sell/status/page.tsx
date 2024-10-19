@@ -19,7 +19,7 @@ export default function SellDetails() {
   const [loading, setLoading] = useState<boolean>(true);
 
   const orderId = searchParams.get('orderId') || '';
-  console.log('orderId is:', orderId);
+  console.log('orderId in the status page:', orderId);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;

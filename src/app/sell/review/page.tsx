@@ -48,16 +48,18 @@ export default function SellReview() {
   const receiveCurrency = searchParams.get('receiveCurrency');
   const receiveAmount = searchParams.get('receiveAmount');
   const offrampType = searchParams.get('offrampType');
+  const phone = searchParams.get('account');
   
   // Bank transfer specific parameters
-  const bank = searchParams.get('bank') || 'No bank specified';
+  const bank = searchParams.get('selectedBank');
+  console.log("Bank is:", bank);
   
 
   // const account = searchParams.get('account');
   const memo = searchParams.get('memo');
   
   // Mobile money specific parameter
-  const phone = searchParams.get('phone');
+  // const phone = searchParams.get('phone');
 
   const [gatewayStatus, setGatewayStatus] = useState('inactive');
   const [orderStatus, setOrderStatus] = useState('inactive');
@@ -70,6 +72,17 @@ export default function SellReview() {
   
 
   const account = useAccount();
+  console.log("Account is:", account);
+// p[rint account?.address?.slice(-4)]
+  console.log("Amount is:", amount);
+  console.log("Token is:", token);
+  console.log("Network is:", network);
+  console.log("Receive currency is:", receiveCurrency);
+  console.log("Receive amount is:", receiveAmount);
+  console.log("Offramp type is:", offrampType);
+  console.log("Bank is:", bank);
+  console.log("Memo is:", memo);
+  console.log("Phone is:", phone);
   const client = usePublicClient();
 
   const tokenDecimals = fetchSupportedTokens("Base")?.find(
@@ -237,6 +250,12 @@ export default function SellReview() {
           setIsOrderCreatedLogsFetched(true);
           clearInterval(intervalId);
           setOrderId(decodedLog.args.orderId);
+          //console.log("Order ID is:", orderId);
+          console.log(`********************************************************************`);
+          console.log("Order ID is:", decodedLog.args.orderId);
+          console.log(`********************************************************************`);
+          console.log("Order ID is:", decodedLog.args.orderId);
+          console.log(`********************************************************************`);
           setCreatedAt(new Date().toISOString());
           setTransactionStatus("pending");
         }
@@ -319,12 +338,21 @@ export default function SellReview() {
     const rate = rateResponse.data; 
     // Prepare recipient data
     const recipient = {
-      // accountIdentifier: formValues.accountIdentifier,
-      // accountName: recipientName,
+      accountIdentifier: phone,
+      accountName: phone,
       institution: bank,
       providerId: PROVIDER_ID,
       memo: memo,
     };
+
+    console.log(`********************************************************************`);
+    console.log("Recipient data:", recipient);
+    console.log("account name is:", recipient.accountName);
+    console.log("account identifier is:", recipient.accountIdentifier);
+    console.log("institution is:", recipient.institution);
+    console.log("Recipient data:", recipient);
+    console.log(`********************************************************************`);
+    console.log(`********************************************************************`);
 
     // Fetch aggregator public key
     const publicKey = await fetchAggregatorPublicKey();
@@ -436,7 +464,7 @@ export default function SellReview() {
         console.log("Executing mutate with transactions:", transactions);
 
         try {
-          // mutate({ transactions });
+          mutate({ transactions });
           const response = await createOrderAsync({
             abi: gatewayAbi,
             address: getGatewayContractAddress(
@@ -529,59 +557,101 @@ export default function SellReview() {
     }
 };
 
+const handleGatewayAproval = async () => {
+  try {
+      console.log("Attempting to approve gateway with params:", {
+        tokenAddress,
+        amount: parseUnits(amount!.toString(), tokenDecimals!)
+      });
 
-  const handleGatewayAproval = async () => {
-    try {
-        // setIsConfirming(true);
-        // console.log("Starting payment confirmation process... set isConfirming to true");
+      const txResult = await approveGateway({
+        abi: erc20Abi,
+        address: tokenAddress,
+        functionName: "approve",
+        args: [
+          getGatewayContractAddress("Base") as `0x${string}`,
+          parseUnits(amount!.toString(), tokenDecimals!),
+        ],
+      });
 
-      // if (gatewayAllowance < parseFloat(amount!)) {
-      //   console.log("Gateway not approved. Attempting approval...");
+      if (txResult) {
+        console.log("Gateway approved successfully:", txResult);
+        setIsGatewayApproved(true);
+      } else {
+        console.error("Gateway approval failed. No result returned.");
+        setErrorMessage("Gateway approval failed. Please try again.");
+        setIsConfirming(false);
+        return;
+      }
+      const receipt = await client!.waitForTransactionReceipt({ hash: txResult });
+      console.log("Gateway approval receipt:", receipt);
+      if (receipt.status === "success") {	
+        console.log("Gateway approval receipt:", receipt);
+        setIsConfirming(false);
+      } else {
+        console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
+        setErrorMessage("Gateway approval failed. Please try again.");
+        setIsConfirming(false);
+      }
 
-        console.log("Attempting to approve gateway with params:", {
-          tokenAddress,
-          amount: parseUnits(amount!.toString(), tokenDecimals!)
-        });
+  } catch (error) {
+    console.error("Error during payment confirmation:", error);
+    setErrorMessage("An error occurred while confirming the payment.");
+    setIsConfirming(false);
+  }
+};
+  // const handleGatewayAproval = async () => {
+  //   try {
+  //       // setIsConfirming(true);
+  //       // console.log("Starting payment confirmation process... set isConfirming to true");
+
+  //     // if (gatewayAllowance < parseFloat(amount!)) {
+  //     //   console.log("Gateway not approved. Attempting approval...");
+
+  //       console.log("Attempting to approve gateway with params:", {
+  //         tokenAddress,
+  //         amount: parseUnits(amount!.toString(), tokenDecimals!)
+  //       });
         
   
-        const txResult = await approveGateway({
-          abi: erc20Abi,
-          address: tokenAddress,
-          functionName: "approve",
-          args: [
-            getGatewayContractAddress("Base") as `0x${string}`,
-            parseUnits(amount!.toString(), tokenDecimals!),
-          ],
-        });
+  //       const txResult = await approveGateway({
+  //         abi: erc20Abi,
+  //         address: tokenAddress,
+  //         functionName: "approve",
+  //         args: [
+  //           getGatewayContractAddress("Base") as `0x${string}`,
+  //           parseUnits(amount!.toString(), tokenDecimals!),
+  //         ],
+  //       });
   
-        if (txResult) {
-          console.log("Gateway approved successfully:", txResult);
-          setIsGatewayApproved(true);
-        } else {
-          console.error("Gateway approval failed. No result returned.");
-          setErrorMessage("Gateway approval failed. Please try again.");
-          setIsConfirming(false);
-          return;
-        }
-        const receipt = await client!.waitForTransactionReceipt({ hash: txResult });
-        console.log("Gateway approval receipt:", receipt);
-        if (receipt.status === "success") {	
-          console.log("Gateway approval receipt:", receipt);
-          await createOrder();
-          setIsConfirming(false);
+  //       if (txResult) {
+  //         console.log("Gateway approved successfully:", txResult);
+  //         setIsGatewayApproved(true);
+  //       } else {
+  //         console.error("Gateway approval failed. No result returned.");
+  //         setErrorMessage("Gateway approval failed. Please try again.");
+  //         setIsConfirming(false);
+  //         return;
+  //       }
+  //       const receipt = await client!.waitForTransactionReceipt({ hash: txResult });
+  //       console.log("Gateway approval receipt:", receipt);
+  //       if (receipt.status === "success") {	
+  //         console.log("Gateway approval receipt:", receipt);
+  //         await createOrder();
+  //         setIsConfirming(false);
           
-        } else {
-          console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
-          setErrorMessage("Gateway approval failed. Please try again.");
-          setIsConfirming(false);
-        }
+  //       } else {
+  //         console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
+  //         setErrorMessage("Gateway approval failed. Please try again.");
+  //         setIsConfirming(false);
+  //       }
   
-    } catch (error) {
-      console.error("Error during payment confirmation:", error);
-      setErrorMessage("An error occurred while confirming the payment.");
-      setIsConfirming(false);
-    }
-  };
+  //   } catch (error) {
+  //     console.error("Error during payment confirmation:", error);
+  //     setErrorMessage("An error occurred while confirming the payment.");
+  //     setIsConfirming(false);
+  //   }
+  // };
 
 
 
@@ -608,17 +678,23 @@ export default function SellReview() {
 
     }
     const waitForOrderLogs = new Promise<void>((resolve, reject) => {
+      console.log("Waiting for order logs...************************************");
       const intervalId = setInterval(() => {
         if (isOrderCreatedLogsFetched) {
+          console.log(`isOrderCreatedLogsFetched is: ${isOrderCreatedLogsFetched}`);
           clearInterval(intervalId);
           resolve();
         }
       }, 1000);
+      
+      console.log("Interval ID is:", intervalId);
     });
 
     // Wait for the logs
+
     await waitForOrderLogs;
     setIsProcessing(false);
+    console.log("Order logs fetched successfully. Order ID is:", orderId);
 
     router.push(`/sell/status?orderId=${orderId}`);
   
@@ -673,7 +749,7 @@ export default function SellReview() {
               </div>
               <div className={styles.reviewItem}>
                 <span className={styles.reviewLabel}>Account Number:</span>
-                <span>{account?.address?.slice(-4)}</span>
+                <span>{phone}</span>
               </div>
               {memo && (
                 <div className={styles.reviewItem}>
