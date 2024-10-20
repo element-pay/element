@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload, faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import styles from './page.module.css';
 
 declare global {
@@ -43,15 +43,24 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
+      <div className={styles.heroBackground}></div>
       <div id="particles-js" ref={particlesRef} className={styles.particlesBackground}></div>
       <header className={styles.header}>
-        <div className={styles.logo}>g</div>
+        <div className={styles.logo}>Element<span>Pay</span></div>
         <nav className={`${styles.nav} ${isMenuOpen ? styles.open : ''}`}>
           <a href="#features" onClick={toggleMenu}>Features</a>
           <a href="#developers" onClick={toggleMenu}>Developers</a>
           <a href="#docs" onClick={toggleMenu}>Docs</a>
+
           <button className={styles.downloadBtn}>
-            <FontAwesomeIcon icon={faDownload} /> Download
+            <a href="/buy/amount">
+            Buy
+            </a>
+          </button>
+          <button className={styles.downloadBtn}>
+            <a href="/sell/amount">
+            Sell
+            </a>
           </button>
         </nav>
         <button className={styles.menuToggle} onClick={toggleMenu}>
@@ -59,15 +68,17 @@ export default function Home() {
         </button>
       </header>
       <main className={styles.main}>
-        <h1 className={styles.title}>Seamless Payments, Anytime</h1>
-        <h2 className={styles.subtitle}>Crypto to M-Pesa Made Easy</h2>
+        <h1 className={styles.title}>Crypto to Fiat Micropayments</h1>
+        <h1 className={styles.title}>In Africa</h1>
+        <h2 className={styles.subtitle}>Offramp & Onramp Easily</h2>
+        <p className={styles.slogan}> ~Your gateway to effortless payments~ </p>
         <p className={styles.description}>
-          Your gateway to effortless payments. Use your crypto assets to pay directly with M-Pesa. Fast, secure, and reliable
-          transactions at your fingertips. Connect your wallet, convert your assets, and make payments instantly.
+        Pay with crypto for everyday transactions across Africa. Convert your crypto assets to local currency quickly and securely. Just connect your wallet, and make instant payments anywhere in Africa with ease.
         </p>
         <div className={styles.cta}>
-          <button className={styles.primaryBtn}>Buy</button>
-          <button className={styles.secondaryBtn}>Sell</button>
+          <a href="/buy/amount">
+          <button className={styles.primaryBtn}>Get Started</button>
+          </a>
         </div>
       </main>
     </div>
