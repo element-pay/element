@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
 import BackButton from '../../../components/BackButton/BackButton';
@@ -665,6 +665,7 @@ const handleGatewayAproval = async () => {
   
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div className={styles.container}>
       <div className={styles.widget}>
         <div className={styles.header}>
@@ -765,5 +766,6 @@ const handleGatewayAproval = async () => {
         </button>
       </div>
     </div>
+    </Suspense>
   );
 }

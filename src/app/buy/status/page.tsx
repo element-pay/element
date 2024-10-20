@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
 import BackButton from '../../../components/BackButton/BackButton';
@@ -48,6 +48,7 @@ export default function BuyStatus() {
   }, [searchParams]);
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div className={styles.container}>
       <div className={styles.widget}>
         <div className={styles.header}>
@@ -107,5 +108,6 @@ export default function BuyStatus() {
         </div>
       </div>
     </div>
+    </Suspense>
   );
 }

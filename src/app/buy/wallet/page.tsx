@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import BackButton from '../../../components/BackButton/BackButton';
@@ -27,6 +27,7 @@ export default function BuyWallet() {
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div className={styles.container}>
       <div className={styles.widget}>
         <div className={styles.header}>
@@ -53,5 +54,6 @@ export default function BuyWallet() {
         </div>
       </div>
     </div>
+    </Suspense>
   );
 }

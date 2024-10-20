@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import Providers from './Providers';
 import '../styles/globals.css';
 
@@ -16,7 +16,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <Providers>
-          <main>{children}</main>
+          <main><Suspense> {children}</Suspense></main>
         </Providers>
       </body>
     </html>
