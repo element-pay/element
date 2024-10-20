@@ -1,45 +1,142 @@
 .container {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: #000;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.particlesBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  padding: 1rem 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.logo {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #00ff9d;
+}
+
+.nav {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.nav a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.downloadBtn {
+  background-color: #00ff9d;
+  color: #000;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.menuToggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
-  height: 100vh;
-  padding: 0 20px;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  position: relative;
+  z-index: 2;
 }
 
 .title {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-  text-align: center;
+  font-size: 3rem;
+  margin-bottom: 1rem;
 }
 
-.buttonContainer {
+.subtitle {
+  font-size: 2rem;
+  color: #00ff9d;
+  margin-bottom: 1rem;
+}
+
+.description {
+  max-width: 600px;
+  margin-bottom: 2rem;
+}
+
+.cta {
   display: flex;
   gap: 1rem;
 }
 
-.button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  color: white;
-  background-color: var(--primary-color);
+.primaryBtn {
+  background-color: #00ff9d;
+  color: #000;
   border: none;
+  padding: 0.75rem 1.5rem;
   border-radius: 5px;
   cursor: pointer;
-  text-decoration: none;
-  transition: background-color 0.3s;
+  font-weight: bold;
 }
 
-.button:hover {
-  background-color: #45a049;
+.secondaryBtn {
+  background-color: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
 }
 
-@media (max-width: 600px) {
-  .title {
-    font-size: 2rem;
+@media (max-width: 768px) {
+  .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
   }
 
-  .buttonContainer {
-    flex-direction: column;
+  .nav.open {
+    transform: translateX(0);
+  }
+
+  .menuToggle {
+    display: block;
+    z-index: 3;
   }
 }
