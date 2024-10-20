@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+![Shield3](https://img.shields.io/badge/Shield3-0c0c0c?style=for-the-badge&logo=shield3&logoColor=white) ![Biconomy](https://img.shields.io/badge/Biconomy-ff4e17?style=for-the-badge&logo=biconomy&logoColor=white) ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-0f172a?style=for-the-badge&logo=tailwind-css&logoColor=white) ![Viem](https://img.shields.io/badge/Viem-232225?style=for-the-badge&logo=vue.js&logoColor=white) ![Wagmi](https://img.shields.io/badge/Wagmi-1b1b1f?style=for-the-badge&logo=wagmi&logoColor=white) ![RainbowKit](https://img.shields.io/badge/RainbowKit-6e66ee?style=for-the-badge&logo=rainbowkit&logoColor=white)
+
+ElementPay is a cutting-edge onramp/offramp dapp built on Base for the Base Africa Buildathon. Our mission is to bridge the gap between cryptocurrency and local currencies, making digital finance accessible to both newbies and experts across Africa.
+
+## 🚀 Features
+
+- **Seamless Offramp**: Easily convert crypto to local currencies like Mpesa KES.
+- **Effortless Onramp**: Convert local currencies to stablecoins using only basename or walletaddress and bank/mobile bank payments.
+- **Decentralized Liquidity**: Leverage our decentralized liquidity protocol for efficient transactions.
+- **User-Friendly Interface**: Designed for both crypto beginners and experienced users.
+
+## 🌍 Our Vision
+
+By providing a seamless and efficient decentralized onramp/offramp solution, ElementPay aims to revolutionize financial transactions in Africa, enabling broader access to the global digital economy.
+
 
 ## Getting Started
 
-First, run the development server:
-
+To run elements pay follow this steps:
 ```bash
+git clone https://github.com/element-pay/element
+cd element
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Don't forget to fill in the necessary variables in the `.env.local` file according to the template provided in [`.env.example`](.env.example).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Then, visit [http://localhost:3000](http://localhost:3000) to start using element pay
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Element is built on baseflow Protocol
 
-## Learn More
+| Before      | Now |
+| ----------- | ----------- |
+| ![image](https://github.com/paycrest/zap/assets/87664239/73548ada-bde5-41f5-8af6-0f9f943c763f)|
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| ELEMENT PAY
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+![ElementPay Flow Diagram](./elementpay-flow-svg.svg)
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ⚠️ Disclaimer Notice
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This application is for demo use only. Any transactions conducted within this app are for illustrative purposes.
+
+Therefore:
+
+While the app records real transactions, please exercise caution and do not use this app as is in a production environment. Use at your own risk. Element pay is  not responsible for any issues or damages that may arise from the use of this app.
+
