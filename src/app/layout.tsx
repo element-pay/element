@@ -3,8 +3,8 @@ import Providers from './Providers';
 import '../styles/globals.css';
 
 export const metadata = {
-  title: 'Crypto Exchange',
-  description: 'Buy and sell cryptocurrency',
+  title: 'Element Pay',
+  description: 'crypto to local currency and vice versa',
 };
 
 export default function RootLayout({

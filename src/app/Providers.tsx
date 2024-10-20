@@ -17,7 +17,7 @@ import {
   ledgerWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 
-const appName = 'Crypto Exchange';
+const appName = 'ElementPay';
 const queryClient = new QueryClient();
 
 // Wallet connectors configuration using connectorsForWallets
