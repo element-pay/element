@@ -549,7 +549,7 @@ export default function SellReview() {
       }
       
       // After approval, create the order
-      await createOrder();
+      // await createOrder();
 
     } catch (e: any) {
       setErrorMessage((e as BaseError).shortMessage || e!.message);
@@ -587,6 +587,7 @@ const handleGatewayAproval = async () => {
       console.log("Gateway approval receipt:", receipt);
       if (receipt.status === "success") {	
         console.log("Gateway approval receipt:", receipt);
+        await createOrder();
         setIsConfirming(false);
       } else {
         console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
@@ -600,58 +601,13 @@ const handleGatewayAproval = async () => {
     setIsConfirming(false);
   }
 };
-  // const handleGatewayAproval = async () => {
-  //   try {
-  //       // setIsConfirming(true);
-  //       // console.log("Starting payment confirmation process... set isConfirming to true");
+  useEffect(() => {
+    if (orderId) {
+      console.log("Saving orderId to local storage:", orderId);
+      localStorage.setItem('orderId', orderId); 
+    }
+  }, [orderId]);
 
-  //     // if (gatewayAllowance < parseFloat(amount!)) {
-  //     //   console.log("Gateway not approved. Attempting approval...");
-
-  //       console.log("Attempting to approve gateway with params:", {
-  //         tokenAddress,
-  //         amount: parseUnits(amount!.toString(), tokenDecimals!)
-  //       });
-        
-  
-  //       const txResult = await approveGateway({
-  //         abi: erc20Abi,
-  //         address: tokenAddress,
-  //         functionName: "approve",
-  //         args: [
-  //           getGatewayContractAddress("Base") as `0x${string}`,
-  //           parseUnits(amount!.toString(), tokenDecimals!),
-  //         ],
-  //       });
-  
-  //       if (txResult) {
-  //         console.log("Gateway approved successfully:", txResult);
-  //         setIsGatewayApproved(true);
-  //       } else {
-  //         console.error("Gateway approval failed. No result returned.");
-  //         setErrorMessage("Gateway approval failed. Please try again.");
-  //         setIsConfirming(false);
-  //         return;
-  //       }
-  //       const receipt = await client!.waitForTransactionReceipt({ hash: txResult });
-  //       console.log("Gateway approval receipt:", receipt);
-  //       if (receipt.status === "success") {	
-  //         console.log("Gateway approval receipt:", receipt);
-  //         await createOrder();
-  //         setIsConfirming(false);
-          
-  //       } else {
-  //         console.error("Gateway approval failed. Transaction receipt status:", receipt.status);
-  //         setErrorMessage("Gateway approval failed. Please try again.");
-  //         setIsConfirming(false);
-  //       }
-  
-  //   } catch (error) {
-  //     console.error("Error during payment confirmation:", error);
-  //     setErrorMessage("An error occurred while confirming the payment.");
-  //     setIsConfirming(false);
-  //   }
-  // };
 
 
 
@@ -680,14 +636,20 @@ const handleGatewayAproval = async () => {
     const waitForOrderLogs = new Promise<void>((resolve, reject) => {
       console.log("Waiting for order logs...************************************");
       const intervalId = setInterval(() => {
+        console.log("Checking if order logs are fetched in the wait for order logs function...");
         if (isOrderCreatedLogsFetched) {
           console.log(`isOrderCreatedLogsFetched is: ${isOrderCreatedLogsFetched}`);
           clearInterval(intervalId);
           resolve();
         }
       }, 1000);
+
+      setTimeout(() => {
+        console.log("Order logs not fetched within 30 seconds. Proceeding...");
+        clearInterval(intervalId);
+        resolve(); // Proceed without logs?
+      }, 10000); 
       
-      console.log("Interval ID is:", intervalId);
     });
 
     // Wait for the logs

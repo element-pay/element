@@ -14,53 +14,66 @@ export default function SellDetails() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [transactionStatus, setTransactionStatus] = useState('pending');
-  const [completedAt, setCompletedAt] = useState<string>('');
+  const [transactionStatus, setTransactionStatus] = useState<string>('pending');
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
-  const orderId = searchParams.get('orderId') || '';
-  console.log('orderId in the status page:', orderId);
-
+  // Fetch `orderId` from URL or Local Storage
   useEffect(() => {
+    const queryOrderId = searchParams.get('orderId');
+    const storedOrderId = localStorage.getItem('orderId');
+
+    if (queryOrderId) {
+      setOrderId(queryOrderId);
+    } else if (storedOrderId) {
+      setOrderId(storedOrderId);
+    } else {
+      console.error('Order ID is missing. Redirecting...');
+      router.push('/sell'); // Redirect if no orderId is found
+    }
+  }, [searchParams, router]);
+
+  // Poll the order status and update UI accordingly
+  useEffect(() => {
+    if (!orderId) return;
+
     let intervalId: NodeJS.Timeout;
 
     const getOrderStatus = async () => {
       try {
+        setLoading(true); 
         const orderStatus = await fetchOrderStatus(orderId);
-        console.log('Fetched order status:', orderStatus);
 
+        console.log('Fetched order status:', orderStatus);
         const status = orderStatus.data.status;
+
+        // Update state based on order status
         setTransactionStatus(status);
         setCompletedAt(orderStatus.data.updatedAt);
 
-        if (['validated', 'settled', 'refunded'].includes(status)) {
-          clearInterval(intervalId);
+        if (['validated', 'settled', 'refunded', 'fulfilled'].includes(status)) {
+          clearInterval(intervalId); // Stop polling if final status is reached
         }
       } catch (error) {
         console.error('Error fetching order status:', error);
       } finally {
-        setLoading(false); // Ensure loading stops even on error
+        setLoading(false); // Ensure loading stops
       }
     };
-
-    if (!orderId) {
-      console.error('Order ID is missing');
-      setLoading(false);
-      return;
-    }
 
     // Initial fetch
     getOrderStatus();
 
-    // Polling every 2 seconds
+    // Poll every 2 seconds
     intervalId = setInterval(getOrderStatus, 2000);
 
-    // Cleanup on unmount
+    // Cleanup on component unmount
     return () => clearInterval(intervalId);
   }, [orderId]);
 
   const handleBackButtonClick = () => {
-    router.push('/');
+    router.push('/'); // Navigate back to the home page
   };
 
   const getStatusMessage = () => {
@@ -80,6 +93,25 @@ export default function SellDetails() {
     }
   };
 
+  const getWarningMessage = () => {
+    if (transactionStatus === 'refunded') {
+      return 'Your payment was unsuccessful, and it has been refunded. Please try again.';
+    }
+    if (['settled', 'validated', 'fulfilled'].includes(transactionStatus)) {
+      return 'Your transaction was successful.';
+    }
+    return 'The transaction is being processed. This might take a few seconds.';
+  };
+
+  const getProgressBarStatus = (stepNumber: number) => {
+    if (stepNumber === 1) return 'completed';
+    if (stepNumber === 2 && transactionStatus !== 'pending') return 'completed';
+    if (stepNumber === 3 && ['validated', 'settled', 'fulfilled'].includes(transactionStatus)) {
+      return 'completed';
+    }
+    return 'active';
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.widget}>
@@ -90,17 +122,9 @@ export default function SellDetails() {
 
         <ProgressBar
           steps={[
-            { label: 'Details', status: 'completed', number: 1 },
-            {
-              label: 'Payment',
-              status: transactionStatus !== 'pending' ? 'completed' : 'active',
-              number: 2,
-            },
-            {
-              label: 'Review',
-              status: transactionStatus === 'validated' ? 'completed' : 'upcoming',
-              number: 3,
-            },
+            { label: 'Details', status: getProgressBarStatus(1), number: 1 },
+            { label: 'Payment', status: getProgressBarStatus(2), number: 2 },
+            { label: 'Review', status: getProgressBarStatus(3), number: 3 },
           ]}
           currentStep={2}
         />
@@ -114,28 +138,20 @@ export default function SellDetails() {
                 <PiSpinnerBold className="animate-spin text-3xl text-orange-500" />
                 <p>Loading transaction status...</p>
               </div>
-            ) : transactionStatus === 'pending' || transactionStatus === 'processing' ? (
-              <div className={styles.spinner}>
-                <PiSpinnerBold className="animate-spin text-3xl text-orange-500" />
-                <p>{getStatusMessage()}</p>
-              </div>
             ) : (
               <div className={styles.completed}>
                 <PiCheckCircle className="text-4xl text-green-500" />
                 <p>{getStatusMessage()}</p>
+                {completedAt && <p>Completed at: {new Date(completedAt).toLocaleString()}</p>}
               </div>
             )}
           </AnimatePresence>
 
           <div className={styles.warning}>
-            <p>
-              {transactionStatus === 'refunded'
-                ? `Your payment was unsuccessful, and it has been refunded. Please try again.`
-                : `The transaction is being processed. This might take a few seconds.`}
-            </p>
+            <p>{getWarningMessage()}</p>
           </div>
 
-          {['validated', 'settled', 'refunded'].includes(transactionStatus) && (
+          {['validated', 'settled', 'refunded', 'fulfilled'].includes(transactionStatus) && (
             <button onClick={handleBackButtonClick} className={styles.nextButton}>
               Back to Home
             </button>
